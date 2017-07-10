@@ -58,7 +58,7 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
     }
 
     componentWillUnmount() {
-      if (typeof this.unsubscribe === 'function') this.unsubscribe()
+      if (this.unsubscribe) this.unsubscribe()
     }
 
     render() {

@@ -11,22 +11,25 @@ export type Broadcast = {
 }
 
 const createBroadcast = (initialValue: mixed): Broadcast => {
-  let listeners = []
+  const listeners = {}
+  let id = 0
   let currentValue = initialValue
 
   return {
     publish(value: mixed) {
       currentValue = value
-      listeners.forEach(listener => listener(currentValue))
+      Object.keys(listeners).forEach(key => listeners[key](currentValue))
     },
     subscribe(listener) {
-      listeners.push(listener)
+      const subscriptionId = id
+      id += 1
+      listeners[subscriptionId] = listener
 
       // Publish to this subscriber once immediately.
       listener(currentValue)
 
       return () => {
-        listeners = listeners.filter(item => item !== listener)
+        delete listeners[subscriptionId]
       }
     },
   }
