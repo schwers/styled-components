@@ -24,10 +24,24 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
 
     static contextTypes = {
       [CHANNEL]: PropTypes.func,
+      getTheme: PropTypes.func,
     };
 
     state: { theme?: ?Object } = {};
     unsubscribe: () => void;
+
+    constructor(props, context) {
+      super(props)
+
+      if (!context || !context.getTheme) {
+        console.log('wtf no parent getTheme')
+        return
+      }
+
+      this.state = {
+        theme: context.getTheme(),
+      }
+    }
 
     componentWillMount() {
       if (!this.context[CHANNEL]) {
@@ -36,7 +50,10 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
 
       const subscribe = this.context[CHANNEL]
       this.unsubscribe = subscribe(theme => {
-        this.setState({ theme })
+        if (theme !== this.state.theme) {
+          console.warn('resetting state on withTheme HOC mount :(')
+          this.setState({ theme })
+        }
       })
     }
 

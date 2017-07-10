@@ -45,7 +45,11 @@ class ThemeProvider extends Component {
   }
 
   getChildContext() {
-    return { ...this.context, [CHANNEL]: this.broadcast.subscribe }
+    return {
+      ...this.context,
+      [CHANNEL]: this.broadcast.subscribe,
+      getTheme: this.getTheme,
+    }
   }
 
   componentWillReceiveProps(nextProps: ThemeProviderProps) {
@@ -71,6 +75,10 @@ class ThemeProvider extends Component {
     if (!isPlainObject(theme)) {
       throw new Error('[ThemeProvider] Please make your theme prop a plain object')
     }
+    if (!this.outerTheme) {
+      return theme
+    }
+    console.warn('creating new object with outer theme, please be careful with nested themes')
     return { ...this.outerTheme, ...(theme: Object) }
   }
 
@@ -84,9 +92,11 @@ class ThemeProvider extends Component {
 
 ThemeProvider.childContextTypes = {
   [CHANNEL]: PropTypes.func.isRequired,
+  getTheme: PropTypes.func.isRequired,
 }
 ThemeProvider.contextTypes = {
   [CHANNEL]: PropTypes.func,
+  getTheme: PropTypes.func,
 }
 
 export default ThemeProvider
