@@ -45,7 +45,8 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
 
     componentWillMount() {
       if (!this.context[CHANNEL]) {
-        throw new Error('[withTheme] Please use ThemeProvider to be able to use withTheme')
+        console.error('[withTheme] Please use ThemeProvider to be able to use withTheme')
+        return
       }
 
       const subscribe = this.context[CHANNEL]
