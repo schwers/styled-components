@@ -89,10 +89,10 @@ export default class StyleSheet {
     this.deferredInjections[componentId] = css
   }
 
-  inject(componentId: string, isLocal: boolean, css: string, hash: ?any, name: ?string) {
+  inject(componentId: string, isLocal: boolean, cssRules: Array<string>, hash: ?any, name: ?string) {
     if (this === instance) {
       clones.forEach(clone => {
-        clone.inject(componentId, isLocal, css)
+        clone.inject(componentId, isLocal, cssRules)
       })
     }
 
@@ -104,7 +104,7 @@ export default class StyleSheet {
       delete this.deferredInjections[componentId]
     }
 
-    tag.inject(componentId, css, name)
+    tag.inject(componentId, cssRules, name)
 
     if (hash && name) {
       this.hashes[hash.toString()] = name

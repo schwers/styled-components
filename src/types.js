@@ -21,7 +21,7 @@ export type Stringifier = (
   rules: Array<Interpolation>,
   selector: ?string,
   prefix: ?string
-) => string
+) => Array<string>
 
 export type StyleSheet = {
   create: Function

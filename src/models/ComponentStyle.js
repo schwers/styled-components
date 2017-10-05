@@ -74,11 +74,11 @@ export default (nameGenerator: NameGenerator, flatten: Flattener, stringifyRules
         return name
       }
 
-      const css = `\n${stringifyRules(flatCSS, `.${name}`)}`
+      const cssRules = stringifyRules(flatCSS, `.${name}`)
       // NOTE: this can only be set when we inject the class-name.
       // For some reason, presumably due to how css is stringifyRules behaves in
       // differently between client and server, styles break.
-      styleSheet.inject(this.componentId, true, css, hash, name)
+      styleSheet.inject(this.componentId, true, cssRules, hash, name)
       return name
     }
 
