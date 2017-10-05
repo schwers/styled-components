@@ -11,6 +11,15 @@ const stylis = new Stylis({
   semicolon: true,
 })
 
+const isBrowser = typeof window !== 'undefined'
+
+let pendingContexts = []
+if (isBrowser) {
+  stylis.use((context, content, selectors, parent, line, column, length) => {
+    pendingContexts.push({ context, content, selectors, parent, line, column, length });
+  })
+}
+
 const stringifyRules = (
   rules: Array<Interpolation>,
   selector: ?string,
@@ -24,7 +33,16 @@ const stringifyRules = (
     `${prefix} ${selector} { ${flatCSS} }` :
     flatCSS
 
-  return stylis(prefix || !selector ? '' : selector, cssStr)
+  const styles = stylis(prefix || !selector ? '' : selector, cssStr)
+  if (isBrowser) {
+    console.log('')
+    console.log('css string', prefix || !selector ? '' : selector, cssStr)
+    console.log('parsed styles', styles)
+    console.log('contexts', pendingContexts)
+    pendingContexts = []
+  }
+
+  return styles
 }
 
 export default stringifyRules

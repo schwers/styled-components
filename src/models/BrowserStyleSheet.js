@@ -61,15 +61,16 @@ class BrowserTag implements Tag {
     if (sheet === null || sheet === undefined) {
       return
     }
-    const match = css.match(CSS_RULE_SPLIT_RE)
-    if (match !== null && match !== undefined) {
-      for (let i = 0; i < match.length; i += 1) {
-        const rule = match[i]
-        /* eslint-disable */
-        sheet.insertRule(rule, rule.indexOf('@import') !== -1 ? 0 : sheet.cssRules.length)
-        /* eslint-enable */
-      }
-    }
+    sheet.insertRule(css, css.indexOf('@import') !== -1 ? 0 : sheet.cssRules.length)
+    // const match = css.match(CSS_RULE_SPLIT_RE)
+    // if (match !== null && match !== undefined) {
+    //   for (let i = 0; i < match.length; i += 1) {
+    //     const rule = match[i]
+    //     /* eslint-disable */
+    //     sheet.insertRule(rule, rule.indexOf('@import') !== -1 ? 0 : sheet.cssRules.length)
+    //     /* eslint-enable */
+    //   }
+    // }
   }
 
   addComponent(componentId: string) {
