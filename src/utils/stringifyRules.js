@@ -6,7 +6,7 @@ const stylis = new Stylis({
   global: false,
   cascade: true,
   keyframe: false,
-  prefix: false,
+  prefix: true,
   compress: false,
   semicolon: true,
 })
@@ -15,7 +15,11 @@ const isBrowser = typeof window !== 'undefined'
 
 let queue = []
 
-
+// Credit to Emotion for the original implementation. Slightly modified version
+// to return rules as an array in order to easily fit into this dual
+// clientside & serverside architecture
+// https://github.com/emotion-js/emotion/blob/bc85789f9b21a9a7a51ec70bc4b1217af3f2d90b/packages/emotion/src/index.js#L42-L104
+// https://github.com/emotion-js/emotion
 function insertionPlugin(
   context,
   content,
@@ -59,15 +63,15 @@ function insertionPlugin(
         // m edia
         // eslint-disable-next-line no-fallthrough
         case 109: {
-          queue.push(chars + '{' + child + '}')
+          queue.push(`${chars}{${child}}`)
           break
         }
         // k eyframes
         case 107: {
           chars = chars.substring(1)
-          child = chars + '{' + child + '}'
-          queue.push('@-webkit-' + child)
-          queue.push('@' + child)
+          child = `${chars}{${child}}`
+          queue.push(`@-webkit-${child}`)
+          queue.push(`@${child}`)
           break
         }
         default: {

@@ -1,22 +1,24 @@
 // @flow
-import type { Interpolation } from '../types'
+import type { Interpolation, Stringifier } from '../types'
 
-const stringifyRules = (
+const stringifyRules: Stringifier = (
   rules: Array<Interpolation>,
   selector: ?string,
   prefix: ?string,
-): string => (
-  rules
-    .reduce((str: string, partial: Interpolation, index: number): string => (
-      str +
-      // NOTE: This is to not prefix keyframes with the animation name
-      ((index > 0 || !prefix) && selector ? selector : '') +
-      (
-        (partial && Array.isArray(partial)) ?
-          partial.join('') :
-          partial.toString()
-      )
-    ), '')
+): Array<string> => (
+    rules
+    .reduce((accRules: Array<string>, partial: Interpolation, index: number): Array<string> => {
+      accRules.push(
+        // NOTE: This is to not prefix keyframes with the animation name
+        ((index > 0 || !prefix) && selector ? selector : '') +
+        (
+          (partial && Array.isArray(partial)) ?
+            partial.join('') :
+            partial.toString()
+        ))
+
+      return accRules
+    }, [])
 )
 
 export default stringifyRules

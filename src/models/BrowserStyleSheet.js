@@ -24,12 +24,13 @@ import StyleSheet, { SC_ATTR, LOCAL_ATTR } from './StyleSheet'
 export const COMPONENTS_PER_TAG = 40
 
 const IS_BROWSER = typeof window !== 'undefined'
-const IS_DEV = (process.env.NODE_ENV === 'development') || (!process.env.NODE_ENV)
-const USE_SPEEDY = IS_BROWSER && !IS_DEV
+const USE_SPEEDY = IS_BROWSER // we could opt to do this only in dev, but if we did it
+// can lead to issues in production that aren't exposed in dev mode. i.e. if you
+// share styles with a template literal, but don't pass it through `css`, that 
+// function won't be called, but instead stringified. This will throw errors
+// when we `insertRule`. Similar issues occur if you write malformed nested interpolations
+// of functions.
 
-// `insertRule` only accepts one css rule per call.
-// A rule can either be one selector, one @import, or one @media (with nested selectors)
-const CSS_RULE_SPLIT_RE = /((@import\.*?;)|(@media\(.*?\)\{\..+?\{.*?\}\})|(\..+?\{.*?\}))/g
 
 class BrowserTag implements Tag {
   isLocal: boolean
@@ -56,21 +57,19 @@ class BrowserTag implements Tag {
     return this.size >= COMPONENTS_PER_TAG
   }
 
-  speedyInsert(el: HTMLStyleElement, css: string) {
+  speedyInsert(el: HTMLStyleElement, cssRules: Array<string>) {
     const sheet = el.sheet
     if (sheet === null || sheet === undefined) {
       return
     }
-    sheet.insertRule(css, css.indexOf('@import') !== -1 ? 0 : sheet.cssRules.length)
-    // const match = css.match(CSS_RULE_SPLIT_RE)
-    // if (match !== null && match !== undefined) {
-    //   for (let i = 0; i < match.length; i += 1) {
-    //     const rule = match[i]
-    //     /* eslint-disable */
-    //     sheet.insertRule(rule, rule.indexOf('@import') !== -1 ? 0 : sheet.cssRules.length)
-    //     /* eslint-enable */
-    //   }
-    // }
+
+    for (let i = 0; i < cssRules.length; i += 1) {
+      const rule = cssRules[i]
+      /* eslint-disable */
+      // $FlowFixMe Flow's `StyleSheet` breakdown here https://github.com/facebook/flow/issues/2696
+      sheet.insertRule(rule, rule.indexOf('@import') !== -1 ? 0 : sheet.cssRules.length)
+      /* eslint-enable */
+    }
   }
 
   addComponent(componentId: string) {
@@ -89,7 +88,7 @@ class BrowserTag implements Tag {
     this.components[componentId] = comp
   }
 
-  inject(componentId: string, css: string, name: ?string) {
+  inject(componentId: string, cssRules: Array<string>, name: ?string) {
     if (!this.ready) this.replaceElement()
     const comp = this.components[componentId]
 
@@ -100,18 +99,19 @@ class BrowserTag implements Tag {
     }
 
     if (USE_SPEEDY) {
-      this.speedyInsert(this.el, css)
+      this.speedyInsert(this.el, cssRules)
     } else {
       if (comp.textNode.data === '') {
         comp.textNode.appendData(`\n/* sc-component-id: ${componentId} */\n`)
       }
-      comp.textNode.appendData(css)
+      comp.textNode.appendData(cssRules.join(''))
     }
 
-    if (name !== undefined) {
+    if (name !== undefined && name !== null) {
       /* eslint-disable */
       const existingNames = this.el.getAttribute(SC_ATTR)
-      this.el.setAttribute(SC_ATTR, existingNames ? `${existingNames} ${name}` : name)
+      const newValue = existingNames ? `${existingNames} ${name}` : name
+      this.el.setAttribute(SC_ATTR, newValue)
       /* eslint-enable */
     }
 
@@ -167,15 +167,14 @@ export default {
     const names = {}
 
     /* Construct existing state from DOM */
-    const nodes = document.querySelectorAll(`[${SC_ATTR}]`)
+    const nodes = document.querySelectorAll(`style[${SC_ATTR}]`)
     const nodesLength = nodes.length
 
     for (let i = 0; i < nodesLength; i += 1) {
       const el = nodes[i]
 
-      /* eslint-disable */
+      // $FlowFixMe Flow doesn't like casting el to `HtmlStyleElement` saying its incompatible
       tags.push(new BrowserTag(el, el.getAttribute(LOCAL_ATTR) === 'true', el.innerHTML))
-      /* eslint-enable */
 
       const attr = el.getAttribute(SC_ATTR)
       if (attr) {
