@@ -24,13 +24,8 @@ import StyleSheet, { SC_ATTR, LOCAL_ATTR } from './StyleSheet'
 export const COMPONENTS_PER_TAG = 40
 
 const IS_BROWSER = typeof window !== 'undefined'
-const USE_SPEEDY = IS_BROWSER // we could opt to do this only in dev, but if we did it
-// can lead to issues in production that aren't exposed in dev mode. i.e. if you
-// share styles with a template literal, but don't pass it through `css`, that 
-// function won't be called, but instead stringified. This will throw errors
-// when we `insertRule`. Similar issues occur if you write malformed nested interpolations
-// of functions.
-
+const IS_DEV = (process.env.NODE_ENV === 'development') || (!process.env.NODE_ENV)
+const USE_SPEEDY = IS_BROWSER && !IS_DEV
 
 class BrowserTag implements Tag {
   isLocal: boolean

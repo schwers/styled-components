@@ -34,6 +34,7 @@ function insertionPlugin(
     case -2: {
       const retQueue = queue
       queue = []
+      console.log(retQueue)
       return retQueue
     }
 
