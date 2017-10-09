@@ -14,7 +14,7 @@
     "build:dist": "rollup -c && rollup -c --environment ESBUNDLE && rollup -c --environment PRODUCTION",
     "build:watch": "npm run build:lib -- --watch",
     "test": "npm run test:web && npm run test:native && npm run test:size",
-    "test:web": "jest",
+    "test:web": "jest -c .jest.web.json",
     "test:web:watch": "npm run test:web -- --watch",
     "test:native": "jest -c .jest.native.json",
     "test:native:watch": "npm run test:native -- --watch",
@@ -68,6 +68,7 @@
     "is-plain-object": "^2.0.1",
     "prop-types": "^15.5.4",
     "stylis": "^3.2.1",
+    "stylis-plugin-emotion": "^8.0.5",
     "supports-color": "^3.2.3"
   },
   "devDependencies": {

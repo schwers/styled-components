@@ -24,7 +24,10 @@ import StyleSheet, { SC_ATTR, LOCAL_ATTR } from './StyleSheet'
 export const COMPONENTS_PER_TAG = 40
 
 const IS_BROWSER = typeof window !== 'undefined'
-const IS_DEV = (process.env.NODE_ENV === 'development') || (!process.env.NODE_ENV)
+const IS_DEV = 
+ (typeof __DEV__ === 'boolean' && __DEV__) // `insertRule` doesn't seem to work properly in jest/enzyme
+  process.env.NODE_ENV === 'development' ||
+  !process.env.NODE_ENV
 const USE_SPEEDY = IS_BROWSER && !IS_DEV
 
 class BrowserTag implements Tag {
@@ -99,7 +102,7 @@ class BrowserTag implements Tag {
       if (comp.textNode.data === '') {
         comp.textNode.appendData(`\n/* sc-component-id: ${componentId} */\n`)
       }
-      comp.textNode.appendData(cssRules.join(''))
+      comp.textNode.appendData(`${ cssRules.join(' ') }\n`)
     }
 
     if (name !== undefined && name !== null) {
