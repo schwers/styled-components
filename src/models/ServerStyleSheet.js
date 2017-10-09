@@ -39,7 +39,7 @@ class ServerTag implements Tag {
     if (!comp) throw new Error('Must add a new component before you can inject css into it')
     if (comp.css === '') comp.css = `/* sc-component-id: ${componentId} */\n`
 
-    comp.css += cssRules.join(' ').replace(/\n*$/, '\n')
+    comp.css += cssRules.join('').replace(/\n*$/, '\n')
 
     if (name) this.names.push(name)
   }
