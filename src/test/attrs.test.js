@@ -139,4 +139,21 @@ describe('attrs', () => {
     })``
     expect(shallow(<Comp>Something else</Comp>).html()).toEqual('<div class="sc-a b">Something else</div>')
   })
+
+  it('should update dynamic attr on property change', () => {
+    const Comp = styled.div.attrs({
+      style: ({ background }) => ({
+        background
+      }),
+    })``
+
+    const background = 'red';
+    const newBackground = 'blue';
+    const rendered = shallow(<Comp background={background} />);
+    expect(rendered.html()).toEqual(`<div style="background:${background};" class="sc-a b"></div>`)
+    rendered.setProps({
+      background: newBackground
+    })
+    expect(rendered.html()).toEqual(`<div style="background:${newBackground};" class="sc-a b"></div>`)
+  })
 })
