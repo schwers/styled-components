@@ -33,13 +33,14 @@ class ServerTag implements Tag {
     return Object.keys(this.components).reduce((styles, k) => (styles + this.components[k].css), '')
   }
 
-  inject(componentId: string, css: string, name: ?string) {
+  inject(componentId: string, css: Array<string>, name: ?string) {
     const comp = this.components[componentId]
 
     if (!comp) throw new Error('Must add a new component before you can inject css into it')
     if (comp.css === '') comp.css = `/* sc-component-id: ${componentId} */\n`
 
-    comp.css += css.replace(/\n*$/, '\n')
+
+    comp.css += css.join('\n').replace(/\n*$/, '\n')
 
     if (name) this.names.push(name)
   }

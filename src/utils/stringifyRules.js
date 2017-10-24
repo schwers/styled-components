@@ -15,7 +15,7 @@ const stringifyRules = (
   rules: Array<Interpolation>,
   selector: ?string,
   prefix: ?string,
-): string => {
+): Array<string> => {
   const flatCSS = rules
     .join('')
     .replace(/^\s*\/\/.*$/gm, '') // replace JS comments
@@ -24,7 +24,7 @@ const stringifyRules = (
     `${prefix} ${selector} { ${flatCSS} }` :
     flatCSS
 
-  return stylis(prefix || !selector ? '' : selector, cssStr)
+  return [stylis(prefix || !selector ? '' : selector, cssStr)]
 }
 
 export default stringifyRules

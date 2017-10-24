@@ -40,7 +40,7 @@ export default (nameGenerator: NameGenerator, flatten: Flattener, stringifyRules
       this.componentId = componentId
       if (!StyleSheet.instance.hasInjectedComponent(this.componentId)) {
         const placeholder = process.env.NODE_ENV !== 'production' ? `.${componentId} {}` : ''
-        StyleSheet.instance.deferredInject(componentId, true, placeholder)
+        StyleSheet.instance.deferredInject(componentId, true, [placeholder])
       }
     }
 
@@ -74,7 +74,7 @@ export default (nameGenerator: NameGenerator, flatten: Flattener, stringifyRules
         return name
       }
 
-      const css = `\n${stringifyRules(flatCSS, `.${name}`)}`
+      const css = stringifyRules(flatCSS, `.${name}`)
       // NOTE: this can only be set when we inject the class-name.
       // For some reason, presumably due to how css is stringifyRules behaves in
       // differently between client and server, styles break.
