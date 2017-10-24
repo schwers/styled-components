@@ -66,7 +66,7 @@ class BrowserTag implements Tag {
     if (!comp) throw new Error('Must add a new component before you can inject css into it')
     if (comp.textNode.data === '') comp.textNode.appendData(`\n/* sc-component-id: ${componentId} */\n`)
 
-    comp.textNode.appendData(css)
+    comp.textNode.appendData(css.join(' '))
     if (name) {
       const existingNames = this.el.getAttribute(SC_ATTR)
       this.el.setAttribute(SC_ATTR, existingNames ? `${existingNames} ${name}` : name)

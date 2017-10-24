@@ -50,7 +50,7 @@ const stringifyRules = (
     `${prefix} ${selector} { ${flatCSS} }` :
     flatCSS
 
-  return [stylis(prefix || !selector ? '' : selector, cssStr)]
+  return stylis(prefix || !selector ? '' : selector, cssStr)
 }
 
 export default stringifyRules
