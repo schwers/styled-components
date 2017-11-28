@@ -242,7 +242,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
       const reusedClassName = this.possiblyReusedClassname(props, theme)
       let generatedClassName
-      if (reusedClassName !== false) {
+      if (reusedClassName) {
         generatedClassName = reusedClassName
       } else {
         const executionContext = this.buildExecutionContext(theme, props)
@@ -328,7 +328,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
     generateAndInjectStyles(theme: any, props: any) {
       const reusedClassName = this.possiblyReusedClassname(props, theme)
-      if (reusedClassName !== false) {
+      if (reusedClassName) {
         return reusedClassName
       } else {
         const { componentStyle, warnTooManyClasses } = this.constructor
@@ -367,7 +367,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     componentWillReceiveProps(nextProps: { theme?: Theme, [key: string]: any }) {
       const theme = determineTheme(nextProps, this.theme, this.constructor.defaultProps)
       const reusedClassName = this.possiblyReusedClassname(nextProps, theme)
-      if (reusedClassName === false) {
+      if (!reusedClassName) {
         const generatedClassName = this.generateAndInjectStyles(theme, nextProps)
         this.theme = theme
         this.setState({ generatedClassName })
