@@ -41,7 +41,7 @@ export default class StyleSheet {
 
   constructor(tagConstructor: (boolean) => Tag,
     tags: Array<Tag> = [],
-    names: { [string]: boolean } = {},
+    names: { [number]: boolean } = {},
   ) {
     this.tagConstructor = tagConstructor
     this.tags = tags
@@ -60,16 +60,16 @@ export default class StyleSheet {
   }
 
   /* Best level of caching—get the name from the hash straight away. */
-  getName(hash: any) {
-    return this.hashes[hash.toString()]
+  getName(hash: number) {
+    return this.hashes[hash]
   }
 
   /* Second level of caching—if the name is already in the dom, don't
    * inject anything and record the hash for getName next time. */
-  alreadyInjected(hash: any, name: string) {
+  alreadyInjected(hash: number, name: string) {
     if (!this.names[name]) return false
 
-    this.hashes[hash.toString()] = name
+    this.hashes[hash] = name
     return true
   }
 
@@ -89,7 +89,7 @@ export default class StyleSheet {
     this.deferredInjections[componentId] = css
   }
 
-  inject(componentId: string, isLocal: boolean, css: string, hash: ?any, name: ?string) {
+  inject(componentId: string, isLocal: boolean, css: string, hash: ?number, name: ?string) {
     if (this === instance) {
       clones.forEach(clone => {
         clone.inject(componentId, isLocal, css)
@@ -107,7 +107,7 @@ export default class StyleSheet {
     tag.inject(componentId, css, name)
 
     if (hash && name) {
-      this.hashes[hash.toString()] = name
+      this.hashes[hash] = name
     }
   }
 

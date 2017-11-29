@@ -90,11 +90,11 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     propsClassName: ?string, // if a classname was passed in
     attrsClassName: ?string,
   ): string => {
-    let className = propsClassName || ''
-    if (className.length > 0) {
-      className += ' '
-    }
-    className += styledComponentId
+    let className = (propsClassName || '') + ' ' + styledComponentId
+    // if (className.length > 0) {
+    //   className += ' '
+    // }
+    // className += styledComponentId
     if (attrsClassName !== undefined) {
       if (className.length > 0) {
         className += ' '
@@ -111,7 +111,6 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
   }
 
   const renderTarget = (
-    isStatic: boolean,
     className: string,
     props: any,
     target: any,
@@ -124,10 +123,9 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       ...attrs,
     }
 
-    let isTargetTag = isTag(target)
+    const isTargetTag = isTag(target)
     if (isStyledComponent(target)) {
       propsForElement.innerRef = innerRef
-      isTargetTag = false
     } else {
       propsForElement.ref = innerRef
     }
@@ -139,7 +137,8 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       if (
         propName !== 'innerRef' &&
         propName !== 'className' &&
-        (isStatic || !isTargetTag || validAttr(propName))
+        propName !== 'theme' &&
+        (!isTargetTag || validAttr(propName))
       ) {
         // eslint-disable-next-line no-param-reassign
         propsForElement[propName] = props[propName]
@@ -195,7 +194,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
         attrsClassName,
       )
 
-      return renderTarget(true, className, this.props, target, this.constructor.attrs)
+      return renderTarget(className, this.props, target, this.constructor.attrs)
     }
   }
 
@@ -385,7 +384,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
         this.attrs.className,
       )
 
-      return renderTarget(false, className, this.props, target, this.constructor.attrs)
+      return renderTarget(className, this.props, target, this.constructor.attrs)
     }
   }
 
