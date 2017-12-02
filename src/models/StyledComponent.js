@@ -90,11 +90,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     propsClassName: ?string, // if a classname was passed in
     attrsClassName: ?string,
   ): string => {
-    let className = (propsClassName || '') + ' ' + styledComponentId
-    // if (className.length > 0) {
-    //   className += ' '
-    // }
-    // className += styledComponentId
+    let className = `${propsClassName || ''} ${styledComponentId}`
     if (attrsClassName !== undefined) {
       if (className.length > 0) {
         className += ' '
@@ -137,8 +133,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       if (
         propName !== 'innerRef' &&
         propName !== 'className' &&
-        propName !== 'theme' &&
-        (!isTargetTag || validAttr(propName))
+        (!isTargetTag || (propName !== 'theme' && validAttr(propName)))
       ) {
         // eslint-disable-next-line no-param-reassign
         propsForElement[propName] = props[propName]
@@ -404,6 +399,9 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       ParentComponent: _ParentComponent,
     } = options
 
+    let componentTarget = target
+    let componentRules = rules
+
     const styledComponentId = (options.displayName && options.componentId) ?
       `${options.displayName}-${options.componentId}` : componentId
 
@@ -412,8 +410,27 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       warnTooManyClasses = createWarnTooManyClasses(displayName)
     }
 
+    // Auto-extend styled-components to reduce Higher-Order-Component Soup problems.
+    // You may be wondering if this is performant, but with umbrella caching,
+    // it should be fine :tm:
+    // we can't actually use a `isStyledComponent(target)` check here
+    // because higher-order-components like `connect` will `lift` static attributes.
+    // this is great because we can then use `connect(styled())` for styling
+    // with classname selectors `css` tagged-template-literals, _but_
+    // it means we can't auto-extend them directly.
+    // To check if its a styled-component under the hood,
+    // we have to do a prototype check check
+    if (
+      (target.prototype instanceof StaticStyledComponent ||
+      target.prototype instanceof DynamicallyStyledComponent) &&
+      target.componentStyle
+    ) {
+      componentTarget = target.target
+      componentRules = target.componentStyle.rules.concat(componentRules)
+    }
+
     const componentStyle = new ComponentStyle(
-      extendingRules === undefined ? rules : extendingRules.concat(rules),
+      extendingRules === undefined ? componentRules : extendingRules.concat(componentRules),
       attrs,
       styledComponentId,
     )
@@ -433,7 +450,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       static attrs = attrs
       static componentStyle = componentStyle
       static warnTooManyClasses = warnTooManyClasses
-      static target = target
+      static target = componentTarget
 
       static withComponent(tag) {
         const { componentId: previousComponentId, ...optionsToCopy } = options

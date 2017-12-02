@@ -585,10 +585,10 @@ const svgProps = {
   zoomAndPan: true,
 }
 
-// Allow attributes that are lowercase or contain a `dash`
-const CUSTOM_ATTRIUBTE_REGEXP = /^[a-z0-9-]+$/
+// Allow attributes that are lowercase
+const DATA_ATTRIBUTE_RE = /-/
+const CUSTOM_ATTRIBUTE_RE = /^[a-z0-9]+$/
 
-const isCustomAttribute = attr => CUSTOM_ATTRIUBTE_REGEXP.test(attr)
 
 const ALL_ATTRS = {
   ...reactProps,
@@ -601,7 +601,8 @@ const hasAttr = (map: Object, name: string) => map[name] === true
 
 export default (name: string) => (
   hasAttr(ALL_ATTRS, name) ||
-  isCustomAttribute(name)
+  DATA_ATTRIBUTE_RE.test(name) ||
+  CUSTOM_ATTRIBUTE_RE.test(name)
 )
 
 export const isReactFunction = (name: string) => hasAttr(reactFunctionProps, name)
