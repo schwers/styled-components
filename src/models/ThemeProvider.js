@@ -17,23 +17,30 @@ export const CONTEXT_CHANNEL_SHAPE = PropTypes.shape({
   currentTheme: PropTypes.func,
 })
 
-export type Theme = {[key: string]: mixed}
+export type Theme = { [key: string]: mixed }
 type ThemeProviderProps = {|
   children?: React$Element<any>,
-  theme: Theme | (outerTheme: Theme) => void,
+  theme: Theme | ((outerTheme: Theme) => void),
 |}
 
+let warnChannelDeprecated
+if (process.env.NODE_ENV !== 'production') {
+  warnChannelDeprecated = once(() => {
+    // eslint-disable-next-line no-console
+    console.error(
+      `Warning: Usage of \`context.${CHANNEL}\` as a function is deprecated. It will be replaced with the object on \`.context.${CHANNEL_NEXT}\` in a future version.`
+    )
+  })
+}
 
-const warnChannelDeprecated = once(() => {
-  // eslint-disable-next-line no-console
-  console.error(`Warning: Usage of \`context.${CHANNEL}\` as a function is deprecated. It will be replaced with the object on \`.context.${CHANNEL_NEXT}\` in a future version.`)
-})
+const isFunction = test => typeof test === 'function'
+
 /**
  * Provide a theme to an entire react component tree via context and event listeners (have to do
  * both context and event emitter as pure components block context updates)
  */
 class ThemeProvider extends Component {
-  getTheme: (theme?: Theme | (outerTheme: Theme) => void) => Theme
+  getTheme: (theme?: Theme | ((outerTheme: Theme) => void)) => Theme
   outerTheme: Theme
   unsubscribeToOuterId: string
   props: ThemeProviderProps
@@ -55,8 +62,10 @@ class ThemeProvider extends Component {
         unsubscribe: this.broadcast.unsubscribe,
         currentTheme: this.broadcast.currentState,
       },
-      [CHANNEL]: (subscriber) => {
-        warnChannelDeprecated()
+      [CHANNEL]: subscriber => {
+        if (process.env.NODE_ENV !== 'production') {
+          warnChannelDeprecated()
+        }
 
         // Patch the old `subscribe` provide via `CHANNEL` for older clients.
         const unsubscribeId = this.broadcast.subscribe(subscriber)
@@ -66,13 +75,19 @@ class ThemeProvider extends Component {
   }
 
   componentWillReceiveProps(nextProps: ThemeProviderProps) {
-    if (this.props.theme !== nextProps.theme) this.broadcast.publish(this.getTheme(nextProps.theme))
+    if (this.props.theme !== nextProps.theme) {
+      this.publish(nextProps.theme)
+    }
   }
 
   // Get the theme from the props, supporting both (outerTheme) => {} as well as object notation
   getTheme(passedTheme: (outerTheme: Theme) => void | Theme) {
     const theme = passedTheme || this.props.theme
     return theme
+  }
+
+  publish(theme: Theme | ((outerTheme: Theme) => void)) {
+    this.broadcast.publish(this.getTheme(theme))
   }
 
   render() {

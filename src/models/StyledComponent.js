@@ -11,14 +11,12 @@ import validAttr, { isReactFunction } from '../utils/validAttr'
 import isStyledComponent from '../utils/isStyledComponent'
 import getComponentName from '../utils/getComponentName'
 import determineTheme from '../utils/determineTheme'
+import escape from '../utils/escape'
 import type { RuleSet, Target } from '../types'
 
 import { CHANNEL_NEXT, CONTEXT_CHANNEL_SHAPE } from './ThemeProvider'
 import StyleSheet, { CONTEXT_KEY } from './StyleSheet'
 import ServerStyleSheet from './ServerStyleSheet'
-
-const escapeRegex = /[[\].#*$><+~=|^:(),"'`]/g
-const multiDashRegex = /--+/g
 
 // HACK for generating all static styles without needing to allocate
 // an empty execution context every single time...
@@ -58,19 +56,30 @@ const numComparableDynamicProps = (props: any) => {
 }
 
 export default (ComponentStyle: Function, constructWithOptions: Function) => {
-  /* We depend on components having unique IDs */
   const identifiers = {}
+
+  /* We depend on components having unique IDs */
   const generateId = (_displayName: string, parentComponentId: string) => {
-    const displayName = typeof _displayName !== 'string' ?
-      'sc' : _displayName
-        .replace(escapeRegex, '-') // Replace all possible CSS selectors
-        .replace(multiDashRegex, '-') // Replace multiple -- with single -
+    const displayName =
+      typeof _displayName !== 'string' ? 'sc' : escape(_displayName)
 
-    const nr = (identifiers[displayName] || 0) + 1
-    identifiers[displayName] = nr
+    let componentId
 
-    const hash = ComponentStyle.generateName(displayName + nr)
-    const componentId = `${displayName}-${hash}`
+    /**
+     * only fall back to hashing the component injection order if
+     * a proper displayName isn't provided by the babel plugin
+     */
+    if (!_displayName) {
+      const nr = (identifiers[displayName] || 0) + 1
+      identifiers[displayName] = nr
+
+      componentId = `${displayName}-${ComponentStyle.generateName(
+        displayName + nr
+      )}`
+    } else {
+      componentId = `${displayName}-${ComponentStyle.generateName(displayName)}`
+    }
+
     return parentComponentId !== undefined
       ? `${parentComponentId}-${componentId}`
       : componentId
@@ -335,12 +344,20 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
         const styleSheet = this.context[CONTEXT_KEY] || StyleSheet.instance
 
         const executionContext = this.buildExecutionContext(theme, props)
-        const className = componentStyle.generateAndInjectStyles(executionContext, styleSheet)
+        const className = componentStyle.generateAndInjectStyles(
+          executionContext,
+          styleSheet
+        )
 
         componentStyle.lastProps = props
         componentStyle.lastTheme = theme
 
-        if (warnTooManyClasses !== undefined) warnTooManyClasses(className)
+        if (
+          process.env.NODE_ENV !== 'production' &&
+          warnTooManyClasses !== undefined
+        ) {
+          warnTooManyClasses(className)
+        }
 
         return className
       }
@@ -392,10 +409,12 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
   const createStyledComponent = (
     target: Target,
     options: Object,
-    rules: RuleSet,
+    rules: RuleSet
   ) => {
     const {
-      displayName = isTag(target) ? `styled.${target}` : `Styled(${getComponentName(target)})`,
+      displayName = isTag(target)
+        ? `styled.${target}`
+        : `Styled(${getComponentName(target)})`,
       componentId = generateId(options.displayName, options.parentComponentId),
       rules: extendingRules,
       attrs,
@@ -416,7 +435,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     const componentStyle = new ComponentStyle(
       extendingRules === undefined ? rules : extendingRules.concat(rules),
       attrs,
-      styledComponentId,
+      styledComponentId
     )
 
     if (!_ParentComponent) {
@@ -433,7 +452,6 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       static styledComponentId = styledComponentId
       static attrs = attrs
       static componentStyle = componentStyle
-      static warnTooManyClasses = warnTooManyClasses
       static target = target
 
       static withComponent(tag) {
@@ -441,7 +459,9 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
         const newComponentId =
           previousComponentId &&
-          `${previousComponentId}-${isTag(tag) ? tag : getComponentName(tag)}`
+          `${previousComponentId}-${
+            isTag(tag) ? tag : escape(getComponentName(tag))
+          }`
 
         const newOptions = {
           ...optionsToCopy,
@@ -473,6 +493,10 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
         return constructWithOptions(createStyledComponent, target, newOptions)
       }
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      StyledComponent.warnTooManyClasses = createWarnTooManyClasses(displayName)
     }
 
     return StyledComponent
