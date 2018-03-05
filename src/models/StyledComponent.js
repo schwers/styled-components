@@ -85,7 +85,6 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       : componentId
   }
 
-
   // I know this is ugly, but this does a bit of loop unrolling,
   // and avoids boolean casts in order to generate strings up to ~11x faster than
   // an approach such as [...classes].filter(Boolean).join(' ')
@@ -97,7 +96,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     styledComponentId: string,
     generatedClassName: string,
     propsClassName: ?string, // if a classname was passed in
-    attrsClassName: ?string,
+    attrsClassName: ?string
   ): string => {
     let className = propsClassName || ''
     if (className.length > 0) {
@@ -124,7 +123,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     className: string,
     props: any,
     target: any,
-    attrs: any,
+    attrs: any
   ) => {
     const { innerRef } = props
 
@@ -184,27 +183,32 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       this.state = {
         generatedClassName: componentStyle.generateAndInjectStyles(
           STATIC_EXECUTION_CONTEXT,
-          styleSheet,
+          styleSheet
         ),
       }
     }
 
     render() {
       const { target } = this.constructor
-      const attrsClassName = (
+      const attrsClassName =
         this.constructor.attrs !== undefined
           ? this.constructor.attrs.className
           : undefined
-      )
 
       const className = makeClassName(
         this.constructor.styledComponentId,
         this.state.generatedClassName,
         this.props.className,
-        attrsClassName,
+        attrsClassName
       )
 
-      return renderTarget(true, className, this.props, target, this.constructor.attrs)
+      return renderTarget(
+        true,
+        className,
+        this.props,
+        target,
+        this.constructor.attrs
+      )
     }
   }
 
@@ -225,7 +229,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     }
 
     attrs = {}
-    theme: null;
+    theme: null
     state = {
       generatedClassName: '',
     }
@@ -242,7 +246,11 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
       if (styledContext !== undefined) {
         const { subscribe, currentTheme } = styledContext
-        theme = determineTheme(this.props, currentTheme(), this.constructor.defaultProps)
+        theme = determineTheme(
+          this.props,
+          currentTheme(),
+          this.constructor.defaultProps
+        )
         this.unsubscribeId = subscribe(this.listenToThemeUpdates)
       } else {
         // eslint-disable-next-line react/prop-types
@@ -257,7 +265,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
         const executionContext = this.buildExecutionContext(theme, props)
         generatedClassName = componentStyle.generateAndInjectStyles(
           executionContext,
-          styleSheet,
+          styleSheet
         )
 
         componentStyle.lastProps = props
@@ -271,7 +279,11 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     possiblyReusedClassname(props: any, theme: any) {
       const { componentStyle } = this.constructor
       const { lastClassName, lastProps, lastTheme } = componentStyle
-      if (lastClassName === undefined || lastProps === undefined || lastTheme !== theme) {
+      if (
+        lastClassName === undefined ||
+        lastProps === undefined ||
+        lastTheme !== theme
+      ) {
         // if this hasn't been set, bail out
         return false
       } else if (lastProps === props) {
@@ -371,7 +383,11 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
     listenToThemeUpdates = nextTheme => {
       // This will be called once immediately
-      const theme = determineTheme(this.props, nextTheme, this.constructor.defaultProps)
+      const theme = determineTheme(
+        this.props,
+        nextTheme,
+        this.constructor.defaultProps
+      )
       if (theme !== this.theme) {
         this.updateThemeAndClassName(theme, this.props)
       }
@@ -381,11 +397,21 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       this.unsubscribeFromContext()
     }
 
-    componentWillReceiveProps(nextProps: { theme?: Theme, [key: string]: any }) {
-      const theme = determineTheme(nextProps, this.theme, this.constructor.defaultProps)
+    componentWillReceiveProps(nextProps: {
+      theme?: Theme,
+      [key: string]: any,
+    }) {
+      const theme = determineTheme(
+        nextProps,
+        this.theme,
+        this.constructor.defaultProps
+      )
       const reusedClassName = this.possiblyReusedClassname(nextProps, theme)
       if (reusedClassName === false) {
-        const generatedClassName = this.generateAndInjectStyles(theme, nextProps)
+        const generatedClassName = this.generateAndInjectStyles(
+          theme,
+          nextProps
+        )
         this.theme = theme
         this.setState({ generatedClassName })
       } else if (reusedClassName !== this.state.generatedClassName) {
@@ -399,10 +425,16 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
         this.constructor.styledComponentId,
         this.state.generatedClassName,
         this.props.className,
-        this.attrs.className,
+        this.attrs.className
       )
 
-      return renderTarget(false, className, this.props, target, this.constructor.attrs)
+      return renderTarget(
+        false,
+        className,
+        this.props,
+        target,
+        this.constructor.attrs
+      )
     }
   }
 
@@ -420,12 +452,34 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       attrs,
     } = options
 
-    let {
-      ParentComponent: _ParentComponent,
-    } = options
+    let { ParentComponent: _ParentComponent } = options
 
-    const styledComponentId = (options.displayName && options.componentId) ?
-      `${options.displayName}-${options.componentId}` : componentId
+    const styledComponentId =
+      options.displayName && options.componentId
+        ? `${options.displayName}-${options.componentId}`
+        : componentId
+
+    let componentTarget = target
+    let componentRules = rules
+
+    // Auto-extend styled-components to reduce Higher-Order-Component Soup problems.
+    // You may be wondering if this is performant, but with umbrella caching,
+    // it should be fine :tm:
+    // we can't actually use a `isStyledComponent(target)` check here
+    // because higher-order-components like `connect` will `lift` static attributes.
+    // this is great because we can then use `connect(styled())` for styling
+    // with classname selectors `css` tagged-template-literals, _but_
+    // it means we can't auto-extend them directly.
+    // To check if its a styled-component under the hood,
+    // we have to do a prototype check check
+    if (
+      (target.prototype instanceof StaticStyledComponent ||
+        target.prototype instanceof DynamicallyStyledComponent) &&
+      target.componentStyle
+    ) {
+      componentTarget = target.target
+      componentRules = target.componentStyle.rules.concat(componentRules)
+    }
 
     let warnTooManyClasses
     if (process.env.NODE_ENV !== 'production') {
@@ -433,7 +487,9 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     }
 
     const componentStyle = new ComponentStyle(
-      extendingRules === undefined ? rules : extendingRules.concat(rules),
+      extendingRules === undefined
+        ? componentRules
+        : extendingRules.concat(componentRules),
       attrs,
       styledComponentId
     )
@@ -447,12 +503,11 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
     }
 
     class StyledComponent extends _ParentComponent {
-
       static displayName = displayName
       static styledComponentId = styledComponentId
       static attrs = attrs
       static componentStyle = componentStyle
-      static target = target
+      static target = componentTarget
 
       static withComponent(tag) {
         const { componentId: previousComponentId, ...optionsToCopy } = options
