@@ -9,11 +9,12 @@ export type Broadcast = {
   publish: (value: mixed) => void,
   subscribe: (listener: (currentValue: mixed) => void) => number,
   unsubscribe: (number) => void,
-  currentState: () => mixed
+  currentState: () => mixed,
+  cleanup: () => void,
 }
 
 const createBroadcast = (initialState: mixed): Broadcast => {
-  const listeners = {}
+  let listeners = {}
   let id = 0
   let state = initialState
 
@@ -40,14 +41,32 @@ const createBroadcast = (initialState: mixed): Broadcast => {
   }
 
   function unsubscribe(unsubID: number) {
-    listeners[unsubID] = undefined
+    if (listeners !== undefined) {
+      listeners[unsubID] = undefined
+    }
   }
 
   function currentState() {
     return state
   }
 
-  return { publish, subscribe, unsubscribe, currentState }
+  function cleanup() {
+    const keys = Object.keys(listeners);
+    for (let i = 0; i < keys.length; i++) {
+      unsubscribe(listeners[i]);
+    }
+
+    listeners = undefined
+    initialState = undefined
+  }
+
+  return {
+    publish,
+    subscribe,
+    unsubscribe,
+    currentState,
+    cleanup,
+  }
 }
 
 export default createBroadcast

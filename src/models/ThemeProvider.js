@@ -80,6 +80,10 @@ class ThemeProvider extends Component {
     }
   }
 
+  componentWillUnmount() {
+    this.broadcast.cleanup()
+  }
+
   // Get the theme from the props, supporting both (outerTheme) => {} as well as object notation
   getTheme(passedTheme: (outerTheme: Theme) => void | Theme) {
     const theme = passedTheme || this.props.theme

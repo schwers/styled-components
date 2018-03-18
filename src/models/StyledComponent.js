@@ -147,7 +147,11 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       if (
         propName !== 'innerRef' &&
         propName !== 'className' &&
-        (isStatic || !isTargetTag || validAttr(propName))
+        propName !== 'dispatch' &&
+        (!isTargetTag ||
+          validAttr(propName) && (typeof props[propName] === 'function'
+              ? isReactFunction(propName)
+              : true))
       ) {
         // eslint-disable-next-line no-param-reassign
         propsForElement[propName] = props[propName]
@@ -395,6 +399,12 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
     componentWillUnmount() {
       this.unsubscribeFromContext()
+
+      // Avoid memory leaks from props never being collected
+      const { componentStyle } = this.constructor
+      if (componentStyle) {
+        componentStyle.lastProps = undefined
+      }
     }
 
     componentWillReceiveProps(nextProps: {
