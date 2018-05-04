@@ -268,12 +268,25 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
           styleSheet
         )
 
-        componentStyle.lastProps = props
-        componentStyle.lastTheme = theme
+        this.cacheLastPropsAndTheme(props, theme)
       }
 
       this.theme = theme
       this.state = { generatedClassName }
+    }
+
+    cacheLastPropsAndTheme(props: any, theme: any) {
+      const { componentStyle, warnTooManyClasses } = this.constructor
+      const styleSheet = this.context[CONTEXT_KEY] || StyleSheet.instance
+
+      // Onl cache props and theme generation if StyleSheet thinks
+      // styles in general are cacheable. This should only happen
+      // on the client because lifecycle methods won't trigger on the server
+      // -- inducing memory leaks if cached props and theme are never removed
+      if (styleSheet.stylesCacheable) {
+        componentStyle.lastProps = props
+        componentStyle.lastTheme = theme
+      }
     }
 
     possiblyReusedClassname(props: any, theme: any) {
@@ -316,9 +329,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
             }
           }
 
-          // we're good to go
-          componentStyle.lastProps = props
-          componentStyle.lastTheme = theme
+          this.cacheLastPropsAndTheme(props, theme)
           return componentStyle.lastClassName
         }
       }
@@ -361,8 +372,7 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
           styleSheet
         )
 
-        componentStyle.lastProps = props
-        componentStyle.lastTheme = theme
+        this.cacheLastPropsAndTheme(props, theme)
 
         if (
           process.env.NODE_ENV !== 'production' &&
@@ -395,6 +405,14 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
 
     componentWillUnmount() {
       this.unsubscribeFromContext()
+
+      // Prevent dangling references to this theme and props
+      // Which may container reference cycles or DOM nodes, etc
+      const { componentStyle } = this.constructor
+      if (componentStyle.lastProps === this.props) {
+        componentStyle.lastProps = undefined
+        componentStyle.lastTheme = undefined
+      }
     }
 
     componentWillReceiveProps(nextProps: {
