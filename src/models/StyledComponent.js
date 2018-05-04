@@ -245,13 +245,12 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       let theme
 
       if (styledContext !== undefined) {
-        const { subscribe, currentTheme } = styledContext
+        const { currentTheme } = styledContext
         theme = determineTheme(
           this.props,
           currentTheme(),
           this.constructor.defaultProps
         )
-        this.unsubscribeId = subscribe(this.listenToThemeUpdates)
       } else {
         // eslint-disable-next-line react/prop-types
         theme = this.props.theme || {}
@@ -400,6 +399,14 @@ export default (ComponentStyle: Function, constructWithOptions: Function) => {
       )
       if (theme !== this.theme) {
         this.updateThemeAndClassName(theme, this.props)
+      }
+    }
+
+    componentDidMount() {
+      // Only subscribe in did mount to prevent memory leaks
+      const styledContext = this.context[CHANNEL_NEXT]
+      if (styledContext !== undefined) {
+        this.unsubscribeId = styledContext.subscribe(this.listenToThemeUpdates)
       }
     }
 

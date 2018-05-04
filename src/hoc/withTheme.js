@@ -35,6 +35,7 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
 
     state: { theme?: ?Object } = {}
     unsubscribeId: number = -1
+    shouldSubscribe: boolean = false
 
     constructor(props, context) {
       super(props, context)
@@ -59,8 +60,7 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
         this.state = {
           theme: currentTheme(),
         }
-
-        this.unsubscribeId = subscribe(this.updateTheme)
+        this.shouldSubscribe = true // only subscribe once we've mounted to prevent leaks
       }
     }
 
@@ -76,6 +76,13 @@ const wrapWithTheme = (Component: ReactClass<any>) => {
       const theme = determineTheme(nextProps, this.state.theme, defaultProps)
       if (theme !== this.state.theme) {
         this.setState({ theme })
+      }
+    }
+
+    componentDidMount() {
+      const styledContext = this.context[CHANNEL_NEXT]
+      if (styledContext !== undefined && this.shouldSubscribe) {
+        this.unsubscribeId = styledContext.subscribe(this.updateTheme)
       }
     }
 
